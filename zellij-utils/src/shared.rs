@@ -1,6 +1,7 @@
 //! Some general utility functions.
 
 use std::net::{IpAddr, Ipv4Addr};
+use std::sync::{Mutex, OnceLock};
 use std::{iter, str::from_utf8};
 
 use crate::data::{Palette, PaletteColor, PaletteSource, ThemeHue};
@@ -68,6 +69,13 @@ pub fn adjust_to_size(s: &str, rows: usize, columns: usize) -> String {
 }
 
 pub fn make_terminal_title(pane_title: &str) -> String {
+    let terminal_title_override = terminal_title_override()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .clone();
+    if let Some(title) = terminal_title_override {
+        return format!("\u{1b}]0;{}\u{07}", title);
+    }
     format!(
         "\u{1b}]0;{}{}\u{07}",
         get_session_name()
@@ -79,6 +87,17 @@ pub fn make_terminal_title(pane_title: &str) -> String {
             .unwrap_or_default(),
         pane_title
     )
+}
+
+pub fn set_terminal_title_override(title: Option<String>) {
+    *terminal_title_override()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = title;
+}
+
+fn terminal_title_override() -> &'static Mutex<Option<String>> {
+    static TERMINAL_TITLE_OVERRIDE: OnceLock<Mutex<Option<String>>> = OnceLock::new();
+    TERMINAL_TITLE_OVERRIDE.get_or_init(|| Mutex::new(None))
 }
 
 // Colors

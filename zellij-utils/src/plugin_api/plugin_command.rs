@@ -125,8 +125,8 @@ pub use super::generated_api::api::{
         SetPaneFrameStylePayload as ProtobufSetPaneFrameStylePayload,
         SetPaneRegexHighlightsPayload, SetSelfMouseSelectionSupportPayload,
         SetSoftKeyboardPayload as ProtobufSetSoftKeyboardPayload,
-        SetTabFitPayload as ProtobufSetTabFitPayload, SetTimeoutPayload, ShowCursorPayload,
-        ShowFloatingPanesPayload as ProtobufShowFloatingPanesPayload,
+        SetTabFitPayload as ProtobufSetTabFitPayload, SetTerminalTitlePayload, SetTimeoutPayload,
+        ShowCursorPayload, ShowFloatingPanesPayload as ProtobufShowFloatingPanesPayload,
         ShowFloatingPanesResponse as ProtobufShowFloatingPanesResponse, ShowPaneWithIdPayload,
         Size as ProtobufSize, StackPanesPayload, SubscribePayload, SwitchSessionPayload,
         SwitchTabToIdPayload, SwitchTabToPayload, ToggleFloatingPanesPayload,
@@ -1553,6 +1553,12 @@ impl TryFrom<ProtobufPluginCommand> for PluginCommand {
                     Ok(PluginCommand::SetShadowFocus(pane_id.try_into()?))
                 },
                 _ => Err("Mismatched payload for SetShadowFocus"),
+            },
+            Some(CommandName::SetTerminalTitle) => match protobuf_plugin_command.payload {
+                Some(Payload::SetTerminalTitlePayload(payload)) => {
+                    Ok(PluginCommand::SetTerminalTitle(payload.title))
+                },
+                _ => Err("Mismatched payload for SetTerminalTitle"),
             },
             Some(CommandName::DumpSessionLayout) => match protobuf_plugin_command.payload {
                 Some(Payload::DumpSessionLayoutPayload(payload)) => {
@@ -3485,6 +3491,12 @@ impl TryFrom<PluginCommand> for ProtobufPluginCommand {
                 name: CommandName::ExitMobileMode as i32,
                 payload: None,
             }),
+            PluginCommand::SetTerminalTitle(title) => Ok(ProtobufPluginCommand {
+                name: CommandName::SetTerminalTitle as i32,
+                payload: Some(Payload::SetTerminalTitlePayload(SetTerminalTitlePayload {
+                    title,
+                })),
+            }),
             PluginCommand::DumpSessionLayout { tab_index } => Ok(ProtobufPluginCommand {
                 name: CommandName::DumpSessionLayout as i32,
                 payload: tab_index.map(|idx| {
@@ -5329,6 +5341,21 @@ mod tests {
                     assert_eq!(decoded_style, style)
                 },
                 other => panic!("expected SetPaneFrameStyle, got {:?}", other),
+            }
+        }
+    }
+
+    #[test]
+    fn set_terminal_title_protobuf_round_trip() {
+        for title in [Some("session | agent".to_owned()), None] {
+            let original = PluginCommand::SetTerminalTitle(title.clone());
+            let protobuf: ProtobufPluginCommand = original.try_into().expect("encode");
+            let decoded: PluginCommand = protobuf.try_into().expect("decode");
+            match decoded {
+                PluginCommand::SetTerminalTitle(decoded_title) => {
+                    assert_eq!(decoded_title, title)
+                },
+                other => panic!("expected SetTerminalTitle, got {:?}", other),
             }
         }
     }

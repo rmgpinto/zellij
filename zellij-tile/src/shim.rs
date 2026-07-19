@@ -1620,6 +1620,15 @@ pub fn rename_session(name: &str) {
     unsafe { host_run_plugin_command() };
 }
 
+/// Override the host terminal title for this Zellij session.
+/// Pass `None` to restore Zellij's default title behavior.
+pub fn set_terminal_title(title: Option<String>) {
+    let plugin_command = PluginCommand::SetTerminalTitle(title);
+    let protobuf_plugin_command: ProtobufPluginCommand = plugin_command.try_into().unwrap();
+    object_to_stdout(&protobuf_plugin_command.encode_to_vec());
+    unsafe { host_run_plugin_command() };
+}
+
 /// Unblock the input side of a pipe, requesting the next message be sent if there is one
 pub fn unblock_cli_pipe_input(pipe_name: &str) {
     let plugin_command = PluginCommand::UnblockCliPipeInput(pipe_name.to_owned());

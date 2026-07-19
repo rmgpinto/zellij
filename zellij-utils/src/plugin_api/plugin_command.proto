@@ -218,6 +218,7 @@ enum CommandName {
   SetPaneFrameStyle = 224;
   ToggleFloatingPanes = 225;
   NewPane = 226;
+  SetTerminalTitle = 227;
 }
 
 message PluginCommand {
@@ -379,7 +380,12 @@ message PluginCommand {
     NewTiledPaneInTabPayload new_tiled_pane_in_tab_payload = 169;
     SetPaneFrameStylePayload set_pane_frame_style_payload = 170;
     ToggleFloatingPanesPayload toggle_floating_panes_payload = 171;
+    SetTerminalTitlePayload set_terminal_title_payload = 172;
   }
+}
+
+message SetTerminalTitlePayload {
+  optional string title = 1;
 }
 
 message SetPaneFrameStylePayload {

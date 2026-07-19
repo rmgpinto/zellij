@@ -110,6 +110,7 @@ use zellij_utils::{
         },
         plugin_ids::{ProtobufPluginIds, ProtobufZellijVersion},
     },
+    shared::set_terminal_title_override,
 };
 
 #[cfg(feature = "web_server_capability")]
@@ -471,6 +472,7 @@ fn host_run_plugin_command(mut caller: Caller<'_, PluginEnv>) {
                     ),
                     PluginCommand::ExitMobileMode => exit_mobile_mode(env),
                     PluginCommand::SetShadowFocus(pane_id) => set_shadow_focus(env, pane_id.into()),
+                    PluginCommand::SetTerminalTitle(title) => set_terminal_title(env, title),
                     PluginCommand::DumpSessionLayout { tab_index } => {
                         dump_session_layout(env, tab_index)
                     },
@@ -4050,6 +4052,19 @@ fn set_shadow_focus(env: &PluginEnv, pane_id: PaneId) {
         .non_fatal();
 }
 
+fn set_terminal_title(env: &PluginEnv, title: Option<String>) {
+    set_terminal_title_override(title);
+    env.senders
+        .send_to_screen(ScreenInstruction::Render)
+        .with_context(|| {
+            format!(
+                "failed to render terminal title set by plugin {}",
+                env.plugin_id
+            )
+        })
+        .non_fatal();
+}
+
 fn set_tab_fit(env: &PluginEnv, tab_id: usize, fit: Option<(PaneId, Size)>) {
     env.senders
         .send_to_screen(ScreenInstruction::SetTabFit {
@@ -5608,7 +5623,8 @@ fn check_command_permission(
         | PluginCommand::ClearPaneHighlights(..)
         | PluginCommand::SetSoftKeyboard(..)
         | PluginCommand::SetTabFit { .. }
-        | PluginCommand::ExitMobileMode => PermissionType::ChangeApplicationState,
+        | PluginCommand::ExitMobileMode
+        | PluginCommand::SetTerminalTitle(..) => PermissionType::ChangeApplicationState,
         PluginCommand::UnblockCliPipeInput(..)
         | PluginCommand::BlockCliPipeInput(..)
         | PluginCommand::CliPipeOutput(..) => PermissionType::ReadCliPipes,

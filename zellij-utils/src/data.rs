@@ -3645,6 +3645,7 @@ pub enum PluginCommand {
     },
     SetShadowFocus(PaneId),
     ExitMobileMode,
+    SetTerminalTitle(Option<String>),
 }
 
 // Response type for plugin API methods that open a pane in a new tab
